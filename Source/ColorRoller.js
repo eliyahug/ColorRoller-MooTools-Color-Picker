@@ -6,6 +6,7 @@ license: OSL [Open Source License from the Open Source Initiative].
 
 authors:
 - Sam Goody
+- eliyahug
 
 requires:
 - Core/*
@@ -186,22 +187,59 @@ var ColorRoller = new Class({
 			val = (this.vLast ? 360 : 100) * X / this.boxHeight;
 			S = 100 - 100 * Y / this.boxHeight;
 		} else {
-			switch (this.space){
+
+
+		var boxWidth = this.boxHeight,
+			m = this.boxHeight / (boxWidth / 2), //= 2,
+			b = Y - (m * X);
+						
+			
+		
+		switch (this.space){
+/*
+	Given Variables: 
+		X - the x coordinate that is clicked.
+		Y - the y coordinate that is clicked.
+		this.boxHeight - the height (and width) of the box containing the triangle.
+		0,0 is the upper left corner of the box.
+		
+	In all, we need S and val.
+	val can be described as the percentage at which the line crosses the bottom (where 0 is the left). 
+	S can be described as the percentage at which the click was of the line , where 0 is the bottom.
+	The lines can be seen at the link I sent you.
+*/
 				case 'G':
-					val = ((Y - this.boxHeight) / 2 + X) / Y;
-					S = 1 - Y / this.boxHeight;
+					var m2 = Y / (X - boxWidth/2) ,
+					b2 = Y - m2 * X,
+					x9 = (this.boxHeight - b2)/m2;
+										
+					val = x9 / boxWidth; //((Y - this.boxHeight) / 2 + X) / Y;
+					S =  1 - Y / this.boxHeight;//(x9-X)/ (x9-boxwidth/2) //yours is more elegant.
 					break;
 				case 'L':
-					S = ((this.boxHeight - Y) / (2 * (X > this.boxHeight / 2 ? this.boxHeight - X : X)));	
-					val = X / this.boxHeight;
+					var x8 = (X < (boxWidth/2) ? boxWidth-X : X),
+					b3 = Y- (m * x8)
+					x7 = (this.boxHeight-b3)/ m ;
+					
+					S =  (x8-x7)/ (x8-boxWidth);//	; ((this.boxHeight - Y) / (2 * (X > this.boxHeight / 2 ? this.boxHeight - X : X)))
+					val = X / boxWidth  ; // X/this.boxHeight;
 					break;
 				case 'B':
-					var diff = this.boxHeight - (this.boxHeight - Y) / 2 - X;
-					val = 1 - diff / this.boxHeight;
-					S = 1 - (Y - diff) / (this.boxHeight - diff);
+					var	x4 = (this.boxHeight - b) / m;
+						
+					S = (x4 - X) / (x4/2);
+					val = (x4) / (boxWidth);
+						
 			}
 			val *= 100;
 			S *= 100;
+			
+			
+			
+			
+			
+			
+			
 			if (val > 100 || val < 0) return;
 		}
 		if (S > 100) return;
@@ -231,7 +269,8 @@ var ColorRoller = new Class({
 		//steps - 0:RGB, 1:inputs, 2:Picker Position.
 		if (step != 1) this.setValues([+(!this.vLast),'S'],[val,S],5);
 		if (step != 2){
-			if (this.type)
+			console.log('here', this.type);
+			if (!this.type)
 				var top  = this.boxHeight - S * this.boxHeight / 100,
 					left = val * this.boxHeight / (this.vLast ? 360 : 100);
 			else if (this.type < 3)
@@ -239,11 +278,60 @@ var ColorRoller = new Class({
 					radius = S * this.radius / 100,
 					top  = this.radius - radius * Math.cos(angle),
 					left = this.radius + radius * Math.sin(angle);
-			else ;
+			else {
+					
+			console.log ('test 3');
+			
+		S /= 100;
+		val /=100;
+	// X=left   
+	// Y= top
+		var boxWidth = this.boxHeight,
+			m = this.boxHeight / (boxWidth / 2) ; //= 2,
+			
+		switch (this.space){
+			case 'L' :
+				left = val * boxWidth;
+				
+				var x8 = (val < .5 ? boxWidth - left : left);
+				var b3 = (- m * (boxWidth/2)) ,
+				y8 = m * x8 + b3;
+				
+				top  = this.boxHeight - (this.boxHeight -y8) * S //x7 = x8 + (boxWidth- x8) * S  //b3 = -m * (boxWidth/2),
+				
+				
+			break;
+			
+			case 'B':
+				var x4 = boxWidth * val,
+				
+				
+				left = x4 -.5 * x4 * S; //left = X
+				var b2= this.boxHeight - m * x4
+				
+				top = m * left+ b2 ; //top = Y
+				
+			break;
+			
+			case 'G':
+			var x4 = boxWidth * val,
+			left = x4- (x4-boxWidth*.5)* S;
+			top = this.boxHeight- this.boxHeight *S;//top = Y
+			break;
+			}
+			
+			
+			
+			
+			
+			}
 				// triangle under developement;
 			this.els.crBoxSel.setStyles({top:top, left:left});
 		}
-		if (step){
+		
+		if (step){ 
+		S *=100;
+		val *=100;
 			var hsv = this.vLast
 				? [val, S, this.val]
 				: [this.val, S, val];
@@ -282,7 +370,6 @@ var ColorRoller = new Class({
 	setSpace: function(e){
 		var els = this.els;
 		this.space = e ? e.target.value : this.options.space;
-		this.els.crSpace.set('value',this.space);
 		this.els.cr1.set('text',this.space);
 		this.options.colorswitch == 'rgb' 
 			? this.inputRGB()
